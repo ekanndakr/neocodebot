@@ -5,7 +5,9 @@ import pandas as pd
 import os  # Add this import
 
 # Load OpenAI API key from environment variable
-openai.api_key = os.getenv('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')
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
 if not openai.api_key:
     st.error("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
     st.stop()
