@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css">
+    <title>Chatbot - AI Counselor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wrapper {
+            width: 400px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .box {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .chat-message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .item.right {
+            justify-content: flex-end;
+        }
+
+        .icon {
+            width: 35px;
+            height: 35px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .msg {
+            background: white;
+            padding: 12px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .item.right .msg {
+            background: #667eea;
+            color: white;
+            margin-right: 45px;
+        }
+
+        .msg p {
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .user-message {
+            background: #667eea;
+            color: white;
+            padding: 12px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            margin-left: auto;
+            margin-right: 45px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .bot-message {
+            background: white;
+            color: #333;
+            padding: 12px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            margin-left: 45px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .typing-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        .input-field {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-field input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .input-field input:focus {
+            border-color: #667eea;
+        }
+
+        .input-field button {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .input-field button:hover {
+            transform: translateY(-2px);
+        }
+
+        .input-field button:active {
+            transform: translateY(0);
+        }
+
+        /* Scrollbar styling */
+        .box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .box::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .box::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="title">AI Counselor ChatBot</div>
+        <div class="box">
+            <div class="item">
+                <div class="icon">
+                    <i class="fa fa-robot"></i>
+                </div>
+                <div class="msg">
+                    <p>Hello! I'm your AI counselor. How are you feeling today?</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="typing-area">
+            <div class="input-field">
+                <input type="text" id="userBox" placeholder="Type your message here..." required>
+                <button id="sendButton">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const inputMessage = document.getElementById('userBox');
+        const sendButton = document.getElementById('sendButton');
+        const chatMessages = document.querySelector('.box');
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        inputMessage.addEventListener('keypress', function (e) {
+          if (e.key === 'Enter') {
+            sendMessage();
+          }
+        });
+
+        // Predefined responses for fallback when server is unavailable
+        const predefinedResponses = {
+          // Greetings
+          greetings: [
+            'hi', 'hello', 'hey', 'hi there', 'hello there', 'hey there',
+            'hi there!', 'hello there!', 'hey there!'
+          ],
+          greetingResponse: 'Hello! How are you?',
+
+          // Feeling responses
+          notGood: [
+            'i am okay', 'not feeling good', 'not great', 'not good', 'not okay', 'not well',
+            'i am not feeling good', 'today was not good', 'i am not okay'
+          ],
+          notGoodResponse: 'Why? What happened? Would you like to talk about it?',
+
+          // Yes/No responses
+          yes: ['yes', 'yes.', 'yes!'],
+          yesResponse: 'Tell me about it. I am here to listen.',
+
+          no: ['no', 'no.', 'no!'],
+          noResponse: 'You can talk to me about anything. I will help you.',
+
+          // Other responses
+          okay: ['okay', 'okay.', 'okay!'],
+          okayResponse: 'Great!, tell me about your day.',
+
+          // Specific conversation flows
+          conversations: [
+            {
+              input: 'nothing much, today was not as great',
+              response: 'Why?',
+              delay: 1000
+            },
+            {
+              input: 'i dont know, i just feel sad and unmotivated all the time',
+              response: 'That sounds really tough. Have you talked to anyone about it, like a friend or family member?',
+              delay: 2900
+            },
+            {
+              input: 'no i dont want to burden anyone with my problems',
+              responses: [
+                {
+                  text: 'It is important to remember that talking to someone about your feelings is not a burden.',
+                  delay: 2500
+                },
+                {
+                  text: 'In fact, it can often help to share your thoughts with someone you trust',
+                  delay: 4400
+                }
+              ]
+            },
+            {
+              input: 'i dont know if that would help',
+              response: 'It is definitely worth a try. Therapy can be a really effective way to manage symptoms of depression and improve your overall well-being',
+              delay: 3800
+            },
+            {
+              input: 'i dont really have friends nearby, i am just bad at making friends',
+              responses: [
+                {
+                  text: 'It can be tough, but remember that everyone feels awkward sometimes',
+                  delay: 2500
+                },
+                {
+                  text: 'And remember that making friends takes time, it is okay if it does not happen overnight',
+                  delay: 4200
+                }
+              ]
+            },
+            {
+              input: 'i will try, but i just feel so hopeless',
+              responses: [
+                {
+                  text: 'I know it can feel that way sometimes, but it is important to hold on to hope.',
+                  delay: 2900
+                },
+                {
+                  text: 'By far, i have analysed that you some symptoms of a mild depression.',
+                  delay: 4000
+                },
+                {
+                  text: 'But it is okay, you can get through this. It is a treatable condition, and with the right support, many people are able to make a full recovery',
+                  delay: 6090
+                },
+                {
+                  text: 'I will help you through this, you can talk to me about anything. And i will recommend you some experts who can help you if you want',
+                  delay: 7800
+                }
+              ]
+            },
+            {
+              input: 'i am feeling a bit better now, thank you for listening',
+              responses: [
+                {
+                  text: 'I am glad to hear that. I am here to listen to you anytime you need me.',
+                  delay: 2800
+                },
+                {
+                  text: 'In the meantime, there are some other things you can try to help boost your mood, like getting regular exercise, practicing mindfulness, and connecting with others.',
+                  delay: 4600
+                }
+              ]
+            },
+            {
+              input: 'thank you, i will try those things',
+              response: 'Wonderful!',
+              delay: 1800
+            },
+            {
+              input: 'bye',
+              response: 'Bye, take care.',
+              delay: 2000
+            }
+          ]
+        };
+
+        // Normalize message for comparison
+        function normalizeMessage(message) {
+          return message.toLowerCase().trim().replace(/[.!]/g, '');
+        }
+
+        // Check if message matches any predefined response
+        function getPredefinedResponse(message) {
+          const normalized = normalizeMessage(message);
+          
+          // Check greetings
+          if (predefinedResponses.greetings.some(greeting => normalizeMessage(greeting) === normalized)) {
+            return { response: predefinedResponses.greetingResponse, delay: 1000 };
+          }
+          
+          // Check not good responses
+          if (predefinedResponses.notGood.some(ng => normalizeMessage(ng) === normalized)) {
+            return { response: predefinedResponses.notGoodResponse, delay: 1900 };
+          }
+          
+          // Check yes responses
+          if (predefinedResponses.yes.some(y => normalizeMessage(y) === normalized)) {
+            return { response: predefinedResponses.yesResponse, delay: 1900 };
+          }
+          
+          // Check no responses
+          if (predefinedResponses.no.some(n => normalizeMessage(n) === normalized)) {
+            return { response: predefinedResponses.noResponse, delay: 1900 };
+          }
+          
+          // Check okay responses
+          if (predefinedResponses.okay.some(ok => normalizeMessage(ok) === normalized)) {
+            return { response: predefinedResponses.okayResponse, delay: 1500 };
+          }
+          
+          // Check specific conversations
+          for (const conv of predefinedResponses.conversations) {
+            if (normalizeMessage(conv.input) === normalized) {
+              if (conv.responses) {
+                return { responses: conv.responses };
+              } else {
+                return { response: conv.response, delay: conv.delay };
+              }
+            }
+          }
+          
+          return null;
+        }
+
+        // Send multiple responses with delays
+        function sendMultipleResponses(responses) {
+          responses.forEach(resp => {
+            setTimeout(() => {
+              addMessageToChat('bot', resp.text);
+            }, resp.delay);
+          });
+        }
+
+        // Main send message function
+        function sendMessage() {
+          const message = inputMessage.value.trim();
+          if (!message) return;
+          
+          // Add user message to chat
+          addMessageToChat('user', message);
+          inputMessage.value = '';
+          
+          // Try to send to Flask backend first
+          fetch('http://localhost:8000/post_test', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: message })
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Server error');
+            }
+            return response.text();
+          })
+          .then(botMessage => {
+            // If server responds successfully, use server response
+            setTimeout(() => {
+              addMessageToChat('bot', botMessage);
+            }, 1000);
+          })
+          .catch(error => {
+            console.log('Server unavailable, using predefined responses');
+            
+            // If server fails, use predefined responses
+            const predefinedResponse = getPredefinedResponse(message);
+            
+            if (predefinedResponse) {
+              if (predefinedResponse.responses) {
+                // Multiple responses
+                sendMultipleResponses(predefinedResponse.responses);
+              } else {
+                // Single response
+                setTimeout(() => {
+                  addMessageToChat('bot', predefinedResponse.response);
+                }, predefinedResponse.delay);
+              }
+            } else {
+              // Default fallback response
+              setTimeout(() => {
+                addMessageToChat('bot', 'I am sorry, I did not understand.');
+              }, 1000);
+            }
+          });
+        }
+
+        // Add message to chat display
+        function addMessageToChat(sender, message) {
+          const messageWrapper = document.createElement('div');
+          messageWrapper.classList.add('chat-message');
+
+          const messageContent = document.createElement('div');
+          messageContent.classList.add(`${sender}-message`);
+          messageContent.textContent = message;
+
+          messageWrapper.appendChild(messageContent);
+          chatMessages.appendChild(messageWrapper);
+
+          // Auto-scroll to bottom
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+</body>
+</html>
